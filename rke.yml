@@ -165,11 +165,12 @@
         name: rke2-agent
         enabled: yes
         state: started
- 
+- import_playbook: rancher-cert.yml 
 - name: check to see if the nodes registered normally
   hosts: masters
   become: yes
   tasks:  
+      
     - name: Get nodes using kubectl
       command: kubectl get nodes -o wide
       register: kubectl_output
@@ -179,5 +180,8 @@
       debug:
         msg: |
           **Kubernetes Nodes:**
-          {{ kubectl_output.stdout }}  
-     
+          {{ kubectl_output.stdout }} 
+
+
+    
+

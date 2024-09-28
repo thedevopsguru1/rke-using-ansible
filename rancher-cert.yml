@@ -1,0 +1,80 @@
+---
+- name: Install Rancher and Cert-Manager on Kubernetes
+  hosts: masters  # Target your master node
+  become: yes
+  tasks:
+    - name: Update yum cache
+      yum:
+        name: '*'
+        state: latest
+        update_cache: yes
+    - name: Install curl
+      yum:
+        name: curl
+        state: latest
+
+    - name: Download Helm installation script
+      get_url:
+        url: https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+        dest: /tmp/get_helm.sh
+        mode: '0755'
+
+    - name: Run the Helm installation script
+      command: /tmp/get_helm.sh
+
+    - name: Add the Cert-Manager Helm repository
+      command: helm repo add jetstack https://charts.jetstack.io
+      args:
+        warn: false
+
+    - name: Update Helm repositories
+      command: helm repo update
+
+    - name: Install Cert-Manager
+      command: >
+        helm install cert-manager jetstack/cert-manager
+        --namespace cert-manager --create-namespace
+        --version v1.10.0  # Specify the version if needed
+        --set installCRDs=true
+
+    - name: Add the Rancher Helm repository
+      command: helm repo add rancher-stable https://releases.rancher.com/server-charts/stable
+      args:
+        warn: false
+
+    - name: Update Helm repositories again
+      command: helm repo update
+
+    - name: Create a namespace for Rancher
+      command: kubectl create namespace cattle-system
+      args:
+        warn: false
+      when: "'cattle-system' not in lookup('pipe', 'kubectl get ns -o jsonpath={.items[*].metadata.name}')"
+
+    - name: Install Rancher using Helm
+      command: >
+        helm install rancher rancher-stable/rancher
+        --namespace cattle-system
+        --set hostname={{ rancher_hostname }}
+        --set replicas=3  # Adjust the number of replicas as needed
+      vars:
+        rancher_hostname: rancher.example.com  # Replace with your desired hostname
+
+    - name: Create a ClusterIssuer for Let's Encrypt
+      command: |
+        kubectl apply -f - <<EOF
+        apiVersion: cert-manager.io/v1
+        kind: ClusterIssuer
+        metadata:
+          name: letsencrypt-prod
+        spec:
+          acme:
+            server: https://acme-v02.api.letsencrypt.org/directory
+            email: yannick@gmail.com  # Replace with your email
+            privateKeySecretRef:
+              name: letsencrypt-prod
+            solvers:
+            - http01:
+                ingress:
+                  class: nginx
+        EOF
