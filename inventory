@@ -1,0 +1,8 @@
+server1 ansible_user=root ansible_host=45.79.202.51
+worker1 ansible_user=root ansible_host=74.207.231.168
+worker2 ansible_user=root ansible_host=172.105.156.71
+[masters]
+    server1
+[workers]
+    worker1
+    worker2
