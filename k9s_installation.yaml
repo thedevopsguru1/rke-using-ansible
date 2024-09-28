@@ -20,10 +20,13 @@
 
     - name: Wait for snapd to initialize
       pause:
-        seconds: 20
+        seconds: 10
 
     - name: Install k9s via Snap
       shell: snap install k9s
+
+    - name: Create symlink for k9s
+      shell: ln -sf /snap/bin/k9s /usr/local/bin/k9s
 
     - name: Verify k9s installation
       shell: k9s version

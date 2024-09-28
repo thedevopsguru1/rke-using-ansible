@@ -182,7 +182,7 @@
           **Kubernetes Nodes:**
           {{ kubectl_output.stdout }} 
 - import_playbook: rancher-cert.yml 
-- import_playbook: k9s_installation.yaml
+#- import_playbook: k9s_installation.yaml
 #- import_playbook: ingresscontroller.yml  # if ingress not installed
 
 
