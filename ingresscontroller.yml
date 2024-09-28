@@ -1,0 +1,29 @@
+---
+- name: Install NGINX Ingress Controller
+  hosts: masters  # Adjust this as needed
+  become: yes
+  tasks:
+    - name: Install required packages
+      yum:
+        name:
+          - curl
+          - git
+        state: latest
+
+    - name: Ensure namespace for ingress-nginx exists
+      shell: |
+        kubectl get namespace ingress-nginx || kubectl create namespace ingress-nginx
+
+    - name: Apply the NGINX Ingress Controller manifest
+      shell: kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/cloud/deploy.yaml
+
+    - name: Verify the Ingress Controller pods are running
+      shell: kubectl get pods -n ingress-nginx
+      register: ingress_status
+      until: ingress_status.rc == 0
+      retries: 5
+      delay: 10
+
+    - name: Show Ingress Controller status
+      debug:
+        var: ingress_status.stdout

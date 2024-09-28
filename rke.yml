@@ -165,7 +165,7 @@
         name: rke2-agent
         enabled: yes
         state: started
-- import_playbook: rancher-cert.yml 
+
 - name: check to see if the nodes registered normally
   hosts: masters
   become: yes
@@ -181,6 +181,9 @@
         msg: |
           **Kubernetes Nodes:**
           {{ kubectl_output.stdout }} 
+- import_playbook: rancher-cert.yml 
+- import_playbook: ingresscontroller.yml  # if ingress not installed
+
 
 
     

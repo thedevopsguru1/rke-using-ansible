@@ -10,7 +10,10 @@
         update_cache: yes
     - name: Install curl
       yum:
-        name: curl
+        name: 
+          - curl
+          - tar
+          - git 
         state: latest
 
     - name: Download Helm installation script
@@ -22,38 +25,33 @@
     - name: Run the Helm installation script
       command: /tmp/get_helm.sh
 
+
     - name: Add the Cert-Manager Helm repository
-      command: helm repo add jetstack https://charts.jetstack.io
-      args:
-        warn: false
+      shell: helm repo add jetstack https://charts.jetstack.io
 
     - name: Update Helm repositories
-      command: helm repo update
+      shell: helm repo update
 
-    - name: Install Cert-Manager
-      command: >
-        helm install cert-manager jetstack/cert-manager
+    - name: Install or Upgrade Cert-Manager
+      shell: >
+        helm upgrade --install cert-manager jetstack/cert-manager
         --namespace cert-manager --create-namespace
-        --version v1.10.0  # Specify the version if needed
-        --set installCRDs=true
+        --version v1.10.0 --set installCRDs=true
 
     - name: Add the Rancher Helm repository
-      command: helm repo add rancher-stable https://releases.rancher.com/server-charts/stable
-      args:
-        warn: false
+      shell: helm repo add rancher-stable https://releases.rancher.com/server-charts/stable
+      
 
     - name: Update Helm repositories again
-      command: helm repo update
+      shell: helm repo update
 
-    - name: Create a namespace for Rancher
-      command: kubectl create namespace cattle-system
-      args:
-        warn: false
-      when: "'cattle-system' not in lookup('pipe', 'kubectl get ns -o jsonpath={.items[*].metadata.name}')"
+    - name: Ensure namespace for Rancher exists
+      shell: |
+        kubectl get namespace cattle-system || kubectl create namespace cattle-system
 
     - name: Install Rancher using Helm
-      command: >
-        helm install rancher rancher-stable/rancher
+      shell: >
+        helm upgrade --install rancher rancher-stable/rancher
         --namespace cattle-system
         --set hostname={{ rancher_hostname }}
         --set replicas=3  # Adjust the number of replicas as needed
@@ -61,7 +59,7 @@
         rancher_hostname: rancher.example.com  # Replace with your desired hostname
 
     - name: Create a ClusterIssuer for Let's Encrypt
-      command: |
+      shell: |
         kubectl apply -f - <<EOF
         apiVersion: cert-manager.io/v1
         kind: ClusterIssuer
