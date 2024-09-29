@@ -54,9 +54,15 @@
         helm upgrade --install rancher rancher-stable/rancher
         --namespace cattle-system
         --set hostname={{ rancher_hostname }}
+        --set bootstrapPassword=admin 
+        --set ingress.tls.source=letsEncrypt 
+        --set letsEncrypt.email=ananae@ex.org 
+        --set letsEncrypt.ingress.class=nginx 
+        --set ingress.ingressClassName=nginx --create-namespace
         --set replicas=3  # Adjust the number of replicas as needed
+        --set ingress.extraAnnotations.cert-manager.io/cluster-issuer="letsencrypt-prod"
       vars:
-        rancher_hostname: rancher.example.com  # Replace with your desired hostname
+        rancher_hostname: rancher.anaeleboo.com  # Replace with your desired hostname
 
     - name: Create a ClusterIssuer for Let's Encrypt
       shell: |

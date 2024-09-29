@@ -16,7 +16,13 @@
           - nfs-utils
           - cryptsetup
           - firewalld
+          - iscsi-initiator-utils
         state: present
+    - name: enable iscsi for Longhorn
+      ansible.builtin.systemd:
+        name: iscsid.service
+        enabled: yes
+        state: started
     - name: Set hostname for master
       hostname:
         name: "{{ inventory_hostname }}"
@@ -115,7 +121,14 @@
           - firewalld
           - nfs-utils
           - cryptsetup 
+          - iscsi-initiator-utils
         state: present
+    - name: enable iscsi for Longhorn
+      ansible.builtin.systemd:
+        name: iscsid.service
+        enabled: yes
+        state: started
+        
     - name: Set hostname for worker nodes
       hostname:
         name: "{{ inventory_hostname }}"
@@ -181,6 +194,16 @@
         msg: |
           **Kubernetes Nodes:**
           {{ kubectl_output.stdout }} 
+    - name: Label worker nodes
+      shell: |
+        kubectl label nodes {{ item }} node-role.kubernetes.io/worker=true --overwrite  # Update label key and value as needed
+      loop: "{{ groups['workers'] }}"
+      register: label_result
+      ignore_errors: yes
+
+    - name: Show label result
+      debug:
+        var: label_result.stdout_lines
 - import_playbook: rancher-cert.yml 
 #- import_playbook: ingresscontroller.yml  # if ingress not installed
 
