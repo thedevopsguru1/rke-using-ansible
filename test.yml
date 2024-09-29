@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: longhorn-pvc
+  namespace: default  # Adjust as needed
+spec:
+  accessModes:
+    - ReadWriteOnce  # Change as necessary
+  resources:
+    requests:
+      storage: 5Gi  # Adjust size as needed
+ # storageClassName: longhorn-static  # Ensure Longhorn storage class is specified
