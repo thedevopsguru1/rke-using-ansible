@@ -1,0 +1,53 @@
+
+- name: Encrypt disks for all nodes
+  hosts: all
+  become: yes
+  tasks:
+    - name: Install cryptsetup
+      package:
+        name: cryptsetup
+        state: present
+
+    - name: Encrypt disk
+      shell: |
+        echo -n "my_secure_password" | cryptsetup luksFormat /dev/sda - --key-file -
+      register: encrypt_disk_result
+      args:
+        creates: /dev/mapper/my_encrypted_disk
+      ignore_errors: yes
+
+    - name: Open encrypted disk
+      shell: |
+        cryptsetup open /dev/sda my_encrypted_disk
+      register: open_disk_result
+      when: encrypt_disk_result is defined and encrypt_disk_result.rc == 0
+
+    - name: Format the encrypted disk
+      filesystem:
+        fstype: ext4
+        dev: /dev/mapper/my_encrypted_disk
+      when: open_disk_result is defined and open_disk_result.rc == 0
+
+    - name: Create mount point
+      file:
+        path: /mnt/my_encrypted_disk
+        state: directory
+
+    - name: Mount the encrypted disk
+      mount:
+        path: /mnt/my_encrypted_disk
+        src: /dev/mapper/my_encrypted_disk
+        fstype: ext4
+        state: mounted
+
+    - name: Add entry to /etc/fstab
+      lineinfile:
+        path: /etc/fstab
+        line: "/dev/mapper/my_encrypted_disk /mnt/my_encrypted_disk ext4 defaults 0 0"
+        state: present
+
+    - name: Add entry to /etc/crypttab
+      lineinfile:
+        path: /etc/crypttab
+        line: "my_encrypted_disk /dev/sdb none luks"
+        state: present

@@ -1,0 +1,51 @@
+---
+- name: Encrypt disks for all nodes
+  hosts: all  # Applies to all nodes in the inventory
+  become: yes
+  tasks:
+    - name: Install cryptsetup
+      package:
+        name: cryptsetup
+        state: present
+
+    - name: Encrypt disk
+      shell: |
+        echo -n "my_secure_password" | cryptsetup luksFormat /dev/sdX - --key-file -
+      args:
+        creates: /dev/mapper/my_encrypted_disk  # Prevents running if already encrypted
+      ignore_errors: yes  # Ignore if already encrypted or if disk doesn't exist
+
+    - name: Open encrypted disk
+      shell: |
+        cryptsetup open /dev/sdX my_encrypted_disk
+      when: ansible_exit_code == 0  # Only if the previous command succeeded
+
+    - name: Format the encrypted disk
+      filesystem:
+        fstype: ext4
+        dev: /dev/mapper/my_encrypted_disk
+      when: ansible_exit_code == 0  # Only if the previous command succeeded
+
+    - name: Create mount point
+      file:
+        path: /mnt/my_encrypted_disk
+        state: directory
+
+    - name: Mount the encrypted disk
+      mount:
+        path: /mnt/my_encrypted_disk
+        src: /dev/mapper/my_encrypted_disk
+        fstype: ext4
+        state: mounted
+
+    - name: Add entry to /etc/fstab
+      lineinfile:
+        path: /etc/fstab
+        line: "/dev/mapper/my_encrypted_disk /mnt/my_encrypted_disk ext4 defaults 0 0"
+        state: present
+
+    - name: Add entry to /etc/crypttab
+      lineinfile:
+        path: /etc/crypttab
+        line: "my_encrypted_disk /dev/sdX none luks"
+        state: present

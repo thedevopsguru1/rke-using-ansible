@@ -1,0 +1,19 @@
+---
+- name: Install RKE2 on Master Node
+  hosts: all
+  become: yes
+  tasks:
+    - name: Destroying RKE2 
+      shell: /usr/bin/rke2-uninstall.sh
+      register: rke2_uninstall
+      ignore_errors: yes  # Optionally ignore errors if the service isn't running
+
+    - name: Check if RKE2 was uninstalled successfully
+      debug:
+        msg: "RKE2 uninstallation output: {{ rke2_uninstall.stdout }}"
+      when: rke2_uninstall.rc == 0  # return command/ exit code
+
+    - name: Fail if RKE2 uninstallation failed
+      fail:
+        msg: "RKE2 uninstallation failed with error: {{ rke2_uninstall.stderr }}"
+      when: rke2_uninstall.rc != 0

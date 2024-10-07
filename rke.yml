@@ -206,8 +206,3 @@
         var: label_result.stdout_lines
 - import_playbook: rancher-cert.yml 
 #- import_playbook: ingresscontroller.yml  # if ingress not installed
-
-
-
-    
-
